@@ -7,8 +7,9 @@ SCREEN_HEIGHT = 720
 SCREEN_TITLE = "Project Run Game"
 
 # Main menu view
-class mainMenuView(arcade.View):
+class MainMenuView(arcade.View):
     def __init__(self):
+        self.main_menu_view = None  # Store MainMenuView instance
         super().__init__()
         self.manager = arcade.gui.UIManager()
         self.manager.enable()
@@ -20,7 +21,7 @@ class mainMenuView(arcade.View):
         start_button = arcade.gui.UIFlatButton(text="Press start to begin!", height=100, width=200)
         @start_button.event("on_click")
         def on_click_begin(event):
-            game_view = gameView()
+            game_view = GameView()
             game_view.setup()
             self.window.show_view(game_view)
 
@@ -44,10 +45,14 @@ class mainMenuView(arcade.View):
             align_y=-50,
         )
 
+    def on_show_view(self):
+        """Set up the view when shown"""
+        # Set background color to red for the main menu to differentiate it from the game view
+        arcade.set_background_color(arcade.color.RED)
+
     def on_draw(self):
         """Render main menu"""
         self.clear()  # Clear screen properly
-        arcade.set_background_color(arcade.color.RED)
         self.manager.draw()  # Draw UI Manager
 
     def on_hide_view(self):
@@ -55,7 +60,7 @@ class mainMenuView(arcade.View):
         self.manager.disable()
 
 # Game view
-class gameView(arcade.View):
+class GameView(arcade.View):
     def __init__(self):
         super().__init__()
         self.player_sprite = None  # Player sprite
@@ -79,23 +84,26 @@ class gameView(arcade.View):
 
     def on_key_press(self, key, modifiers):
         """Handle key press events"""
-        if key == arcade.key.UP:
-            self.player_sprite.change_y = 5
-        elif key == arcade.key.DOWN:
-            self.player_sprite.change_y = -5
-        elif key == arcade.key.LEFT:
-            self.player_sprite.change_x = -5
-        elif key == arcade.key.RIGHT:
-            self.player_sprite.change_x = 5
-        elif key == arcade.key.ESCAPE:
-            menu_view = mainMenuView()
-            self.window.show_view(menu_view)
+        if self.player_sprite:
+            if key == arcade.key.UP:
+                self.player_sprite.change_y = 5
+            elif key == arcade.key.DOWN:
+                self.player_sprite.change_y = -5
+            elif key == arcade.key.LEFT:
+                self.player_sprite.change_x = -5
+                if not self.main_menu_view:
+                    self.main_menu_view = MainMenuView()
+                self.window.show_view(self.main_menu_view)
+            elif key == arcade.key.ESCAPE:
+                menu_view = MainMenuView()
+                self.window.show_view(menu_view)
 
     def on_key_release(self, key, modifiers):
-        """Handle key release events"""
-        if key in [arcade.key.UP, arcade.key.DOWN]:
-            self.player_sprite.change_y = 0
-        if key in [arcade.key.LEFT, arcade.key.RIGHT]:
+        if self.player_sprite:
+            if key in [arcade.key.UP, arcade.key.DOWN]:
+                self.player_sprite.change_y = 0
+            if key in [arcade.key.LEFT, arcade.key.RIGHT]:
+                self.player_sprite.change_x = 0
             self.player_sprite.change_x = 0
 
     def on_update(self, delta_time):
@@ -104,8 +112,8 @@ class gameView(arcade.View):
 
 # Run program
 def main():
-    window = arcade.Window(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
-    menu_view = mainMenuView()
+    window = arcade.Window(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE, resizable=True)
+    menu_view = MainMenuView()
     window.show_view(menu_view)
     arcade.run()
 
